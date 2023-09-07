@@ -11,7 +11,7 @@ public class Nations {
         String password = "Root6912";
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
-            System.out.println("Che nazione vuole cercare?");
+            System.out.println("Search:");
             String search = scan.nextLine();
 
 
@@ -29,11 +29,73 @@ public class Nations {
                         String region = rs.getString("region");
                         String continent = rs.getString("continent");
 
-                        System.out.println(nation + " - ID:" + id + " - " + region + " - " + continent);
+                        System.out.println("ID:" + id + " - Country: " + nation + " - Region: " + region + " - Continent: " + continent);
 
                     }
                 }
             }
+
+            System.out.println("Choose a country ID:");
+            String id = scan.nextLine();
+
+            String countryName = "select c.name \n" +
+                    "from countries c \n" +
+                    "where c.country_id =" + id + ";";
+
+            String searchLanguage = "select distinct l.`language`\n" +
+                    "from languages l \n" +
+                    "join country_languages cl on l.language_id = cl.language_id  \n" +
+                    "join countries c on c.country_id =cl.country_id \n" +
+                    "join country_stats cs on cs.country_id =c.country_id \n" +
+                    "where c.country_id =" + id + ";\n";
+
+            String searchStats = "select distinct cs.population ,cs.gdp ,cs.`year` \n" +
+                    "from languages l \n" +
+                    "join country_languages cl on l.language_id = cl.language_id  \n" +
+                    "join countries c on c.country_id =cl.country_id \n" +
+                    "join country_stats cs on cs.country_id =c.country_id \n" +
+                    "where c.country_id = " + id + "  and cs.`year` = (select max(year) from country_stats cs2);";
+
+            try (PreparedStatement ps = conn.prepareStatement(countryName)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String name = rs.getString("name");
+                        System.out.println("Details for country: " + name);
+
+                    }
+                }
+            }
+
+            System.out.print("Languages: ");
+
+            try (PreparedStatement ps = conn.prepareStatement(searchLanguage)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String language = rs.getString("language");
+                        System.out.print(language + ", ");
+
+                    }
+                }
+            }
+            System.out.println(" ");
+            System.out.println("Most recent stats");
+
+            try (PreparedStatement ps = conn.prepareStatement(searchStats)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        int year = rs.getInt("year");
+                        int population = rs.getInt("population");
+                        long gdp = rs.getLong("gdp");
+
+
+                        System.out.println("Year: " + year);
+                        System.out.println("Population: " + population);
+                        System.out.println("GDP: " + gdp);
+
+                    }
+                }
+            }
+
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
